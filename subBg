@@ -1,0 +1,26 @@
+function [ subData ] = subBg( data,bgRange )
+% subBg 以第baRange张为背景扣除,bgRange可以是一个范围例如bgRange = 1:500;
+% 读取选取背景图片序列范围，判断，对符合范围的用mean求平均，然后用repmat复制到所需维度，最后差减
+% data  图片序列的三维数组
+% bgRange    需要差减的背景图片序列范围
+% subData   扣除背景后的图片序列的三维数组
+
+% Hai-Bo Chen 修改于2019/3/27
+imNum = size(data,1);   %对应data的第一维是张数
+if 0 < min(bgRange) && max(bgRange) <= imNum
+    if length(bgRange) == 1
+        backData = repmat(data(bgRange,:,:),imNum,1,1);   %单张图片数据重复imNum次（与data数组维度一致）
+    else
+%         temp = mean(eval(['data(' num2str(min(bgRange)) ':' num2str(max(bgRange)) ',:,:)']));  %多张图片的数据平均
+%         expression = ['mean','(data(bgRange,:,:))'];
+%         temp = eval(expression);
+        temp = mean(data(bgRange,:,:));     %多张图片的数据平均
+        backData = repmat(temp,imNum,1,1);   %单张图片数据重复imNum次（与data数组维度一致）
+    end
+    subData = data-backData;    %差减后的图像序列三维数据
+else
+    disp('背景区域选择错误');
+    subData = [];
+end
+end
+
