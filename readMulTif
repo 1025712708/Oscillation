@@ -1,0 +1,14 @@
+function [ data ] = readMulTif( myfolder )
+% readMulTif 读取一个文件夹中多张tif图片（利用dir获取文件夹中的文件，然后用imread循环读取文件）
+% myfolder   列出文件夹下的图片
+
+% Hai-Bo Chen 创建于2019/3/26
+%myfolder = dir('1508_pike_100fps_120mA_50mMKNO3_Ag40nm_dilution200_it0-1.6V.tif_7\*.tif'); %查找当前文件夹下的内容
+imNum = size(myfolder,1); %图片张数
+[row,column] = size(imread(myfolder(1).name)); %第一张图片的长宽
+data = zeros(imNum,row,column);  %预设图片序列三维数组
+for ii = 1:imNum
+temp = imread(myfolder(ii).name);   %读取第ii张图片的数据
+data(ii,:,:) = temp;
+end
+end
