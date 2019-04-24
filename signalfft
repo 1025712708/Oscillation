@@ -1,0 +1,36 @@
+Fs = 106; %sampling frequency
+dt = 1/Fs; %time interval
+Ndata = 2782; %the number of data
+t = (0:Ndata-1)*dt; %time sequence
+subplot(2,2,1);plot(t,a)
+title('原始时域信号'); xlabel('Time/s');
+xlim([0,25]);ylim([-25,60]);
+
+Nfft = 2048; %
+Fn = (0:Nfft-1)/Nfft*Fs; %frequency sequence
+y = fft(a,Nfft);
+mag = abs(y);
+subplot(2,2,2);plot(Fn(1:Nfft/2),mag(1:Nfft/2)*2/Nfft);
+xlabel('Frequency/Hz');ylabel('amplitude');
+title('原始频谱图');
+xlim([0 50]);
+
+f1 = 0.8; f2 = 3;
+yy = zeros(1,length(y));
+for ii = 0:Nfft-1;
+    if ii/Nfft*Fs<f1||ii/Nfft*Fs>f2;
+        yy(ii+1) = 0;
+    else
+        yy(ii+1) = y(ii+1);
+    end
+end
+magmag = abs(yy);
+subplot(2,2,3);plot(Fn(1:Nfft/2),magmag(1:Nfft/2)*2/Nfft);
+title('滤波后频谱');xlim([0 50]);
+xlabel('frequency/Hz');
+
+b = real(ifft(yy));
+subplot(2,2,4);plot(t(1:Nfft),b)
+title('滤波后时域信号');xlim([0 25]);
+xlabel('time/s');
+xlim([0,20]);ylim([-20,20]);
