@@ -1,0 +1,10 @@
+function Imean = roiMean(img, mask)
+% roiMean  依据mask对选定图片区域（即非0区域）求强度的平均
+% img  待处理图片
+% mask  图片掩模
+% Imean  该图片所选区域平均强度
+
+% Hai-Bo Chen 修改于2019/4/25
+n = length(find(mask(:)~=0));  %非0像素个数
+img = img.*mask;
+Imean = sum(img(:))/n;
