@@ -1,0 +1,45 @@
+%% Create a Binary Mask
+% There are four methods to generate a binary mask. 
+% The binary mask defines a region of interest (ROI) of the original image. 
+% Mask pixel values of 1 indicate the image pixel belongs to the ROI. 
+% Mask pixel values of 0 indicate the image pixel is part of the background.
+
+% Hai-Bo Chen 创建于2019/4/28
+%% Method 1: Create a Binary Mask from a Grayscale Image
+BW = (I > 0.5);
+
+%% Method 2: Create Binary Mask Using an ROI Function
+% import an image
+clear;clc
+grayImage = imread('subDatafft.tif',75); % Read an image
+subplot(2, 1, 1);
+h_im = imshow(grayImage, []);
+title('Original Grayscale Image');
+
+% Create binary mask using an roi function
+h_roi = imfreehand(gca);  % roi creation functions:impoint/imline/imrect/imellipse/impoly/imfreehand
+position = wait(h_roi);  % Block MATLAB command line until ROI creation is finished;Double-click to resume execution of the MATLAB command line
+subplot(2,1,2)
+BW = createMask(h_roi,h_im);  % Create a binary image ("mask") from the ROI object
+imshow(BW);
+title('Binary mask of the region');
+
+
+%% Method 3: Create Binary Mask Without an Associated Image
+clear;clc
+x = [0 25 50 100 75]; % x coordinate of polygon vertices
+y = [0 75 100 100 50]; % y coordinate of polygon vertices
+m = 500; % height of image(Number of rows in the mask)
+n = 500; % width of image (Number of columns in the mask)
+BW = poly2mask(x,y,m,n);
+imshow(BW)
+
+% replace the input image I with two arguments, m and n (row and column) 
+clear;clc
+c = [112 112 79 79];
+r = [37 66 66 37];
+BW = roipoly(100,200,c,r);
+imshow(BW)
+%% Create Binary Mask Based on Color Values
+BW = roicolor(I,low,high); % an ROI selected as those pixels in image I that lie within the range [low high]
+
