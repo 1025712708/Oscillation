@@ -40,6 +40,7 @@ c = [112 112 79 79];
 r = [37 66 66 37];
 BW = roipoly(100,200,c,r);
 imshow(BW)
-%% Create Binary Mask Based on Color Values
+
+%% Method 4: Create Binary Mask Based on Color Values
 BW = roicolor(I,low,high); % an ROI selected as those pixels in image I that lie within the range [low high]
 
