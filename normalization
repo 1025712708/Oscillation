@@ -1,0 +1,31 @@
+function normal = normalization(x,kind)
+% normalization  normalize the data x to [0 1] or [-1,1]
+% x  输入数据
+% k  分类数值
+% normal 归一化数据
+
+% Hai-Bo Chen  创建于2019/4/29
+%% kind = 1 or 2 表示第一类或第二类规范化
+if nargin < 2;
+    kind = 1;
+else
+    kind = 2;
+end
+[m,n]  = size(x);
+normal = zeros(m,n);
+%% normalize the data x to [0,1]
+if kind == 1  
+    for ii = 1:m
+        ma = max(x(:));
+        mi = min(x(:));
+        normal(ii,:) = (x(ii,:)-mi)./(ma-mi);
+    end
+end
+%% normalize the data x to [-1,1]
+if kind == 2
+    for ii = 1:m
+        mea = mean(x(:));
+        va = var(x(:));
+        normal(ii,:) = (x(ii,:)-mea)/va;
+    end
+end
