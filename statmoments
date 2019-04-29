@@ -1,0 +1,48 @@
+function [v, unv] = statmoments(p,n)
+% statmoments  Computes statistical central moments of image histogram
+% central moment of a histogram whose components are in vector
+% p   直方图向量，the length of p must equal 256 or 65536
+% n   计算的矩的数量(阶数）
+% v   向量，包含了以随机变量值为基础的归一化矩，而随机变量已被标度在区间[0 1]内
+% unv 向量，包含了与v相同的矩，但用位于原始值区间内的数值计算
+
+% The program outputs a vector V with V(1) = mean, V(2) = variance, V(3) =
+% 3rd moment,... V(N) = Nth central moment. The random variable values are
+% normalized to the range [0 1], so all moments also are in this range.
+
+% The program also outputs a vector UNV containing the same moments as V,
+% but using un-normalized random variable values (e.g., 0 to 255 if
+% length(P) = 2^8). For example, if length(P) = 256 and V(1) = 0.5, then
+% UNV(1) would have the value UNV(1) = 127.5 (half of the [0 256] range).
+
+% Hai-Bo Chen 2019/4/29 摘录于冈萨雷斯《数字图像处理》
+Lp = length(p);
+if (Lp ~= 256) && (Lp ~= 65536)
+    error('p must be a 256- or 65536-element vector.');
+end
+G = Lp-1;
+% Make sure the histogram has unit area, and convert it to a column vector.
+p = p/sum(p); p = p(:);
+% Form a vector of all the possible values of the random variable.
+z = 0:G;
+% Now normalize the z's to the range [0 1].
+z = z./G;
+% The mean.
+m = z*p;
+% Center random variables about the mean.
+z = z-m;
+% Compute the central moments.
+v = zeros(1,n);
+v(1) = m;
+for ii = 2:n
+    v(ii) = (z.^ii)*p;
+end
+if nargout > 1
+    % Compute the uncentralized moments.
+    unv = zeros(1,n);
+    unv(1) = m.*G;
+    for ii = 2:n
+        unv(ii) = ((z*G).^ii)*p;
+    end 
+end
+
