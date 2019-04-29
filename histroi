@@ -1,0 +1,18 @@
+function [p, npix] = histroi(f,c,r)
+% hisroi   Computes the histogram of an roi in an image.
+% f   an image
+% c   column coordinate
+% r   row coordinate
+% p   histogram of the polygonal roi in image
+% npix  the number of pixels in the polygonal region
+
+% Hai-Bo Chen 2019/4/29 摘录于冈萨雷斯《数字图像处理》
+
+% Generate the binary mask image
+BW = roipoly(f,c,r);
+% Compute the histogram of the pixels in the roi
+p = imhist(f(BW));
+% Obtain the number of pixels in the roi
+if nargout > 1
+    npix = sum(BW(:));
+end
