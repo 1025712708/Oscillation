@@ -1,0 +1,59 @@
+%% 查看图片噪声类型，选取合适滤波器去噪
+% Hai-Bo Chen 创建于2019/4/30 最新修改于2019/5/1
+
+% Functions needed:
+% 导入原始图片并分析噪声：1.normalization.m(R2018a有推出） 2.histroi.m  3.statmoments.m
+% 非线性空间滤波：1.adpmedian.m
+
+%% 导入原始图片并分析噪声
+clear; clc
+% [file,path] = uigetfile('*.tif');   %默认当前文件夹打开文件选择对话框（只包含tif文件）
+file = 'Ag.tif';
+path = 'C:\Users\hypo\Desktop\Ag\';
+fileName = fullfile(path,file);    %图片序列的完整名称，包含路径
+info = imfinfo(fileName);   %返回图片序列的结构体
+imNum = size(info,1);   %图片张数（构架数）
+row = info(1).Height;   %第一张图片的高度（行数）
+column = info(1).Width; %第一张图片的宽度（列数）
+n = 1000;   %设定读取的图片序号（n = 1:imNum)
+img = normalization(double(imread(fileName,n)));  %对图像归一化,便于后续处理
+subplot(2,2,1),imagesc(img),colorbar
+
+% 估计噪声类型
+[BW,c,r] = roipoly();    %选取roi，得到掩模BW及其坐标
+[p,npix] = histroi(img,c,r);   %计算roi区域内的直方图
+subplot(2,2,2),bar(p,1)  %将各条形的宽度设置为各条形可用总空间的100%。
+[v,unv] = statmoments(p,2);  %被BW掩模覆盖区域的均值和方差
+
+%% 添加噪声并分析噪声
+noiseImg = imnoise(img,'gaussian');
+subplot(2,2,3),imagesc(noiseImg),colorbar
+% 估计噪声参数
+[p1,npix1] = histroi(noiseImg,c,r);   %计算roi区域内的直方图
+subplot(2,2,4),bar(p1,1)  %将各条形的宽度设置为各条形可用总空间的100%。
+[v1,unv1] = statmoments(p1,2);  %被BW掩模覆盖区域的均值和方差
+%% 线性空间滤波
+% 利用fspecial生成预定义的二维线性空间滤波器
+h_filter = fspecial('gaussian');% Create predefined 2-D filter Value:average/disk/gaussian/laplacian/log/motion/prewitt/sobel
+result1 = imfilter(noiseImg,h_filter,'replicate');
+figure,subplot(3,2,1),imagesc(result1),colorbar
+[p2,npix2] = histroi(result1,c,r);   %计算roi区域内的直方图
+subplot(3,2,2),bar(p2,1)  %将各条形的宽度设置为各条形可用总空间的100%。
+[v2,unv2] = statmoments(p2,2);  %被BW掩模覆盖区域的均值和方差
+
+%% 非线性空间滤波
+% 利用ordfilt2生成非线性空间滤波器
+% h_filter = ordfilter2(img,median(1:m*n),ones(m,n));
+result2 = adpmedian(noiseImg,7);  %自适应中值滤波
+subplot(3,2,3),imagesc(result2),colorbar
+[p3,npix3] = histroi(result2,c,r);   %计算roi区域内的直方图
+subplot(3,2,4),bar(p3,1)  %将各条形的宽度设置为各条形可用总空间的100%。
+[v3,unv3] = statmoments(p3,2);  %被BW掩模覆盖区域的均值和方差
+
+%% 维纳滤波 (比较适用于高斯白噪声）
+% remove gaussian noise using wiener2 
+result3 = wiener2(noiseImg,[5,5]);
+subplot(3,2,5),imagesc(result3),colorbar
+[p4,npix4] = histroi(result3,c,r);   %计算roi区域内的直方图
+subplot(3,2,6),bar(p4,1)  %将各条形的宽度设置为各条形可用总空间的100%。
+[v4,unv4] = statmoments(p4,2);  %被BW掩模覆盖区域的均值和方差
