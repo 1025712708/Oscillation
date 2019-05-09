@@ -1,0 +1,99 @@
+%% 读取图片序列，单个像素进行时间序列fft去噪
+% Hai-Bo Chen 创建于2019/4/23 最新修改于2019/5/9
+%
+% Functions：
+% Import image sequence:1.readTifSequence.m; 2.readMulTif.m; 
+% 对图片序列去噪:1.adpmedian.m;
+% FFT analysis of each pixels: 1.showSlide.m;
+% Differential images：1.subBg.m
+
+%% Import image sequence
+%%%%% 选择并读取单个多张的图片序列 %%%%%
+clear;clc
+[file,path] = uigetfile('*.tif');   %默认当前文件夹打开文件选择对话框（只包含tif文件）
+fileName = fullfile(path,file);    %图片序列的完整名称，包含路径
+data = readTifSequence(fileName);  %读取单个的多张图片序列数据,[imNum,row,column]
+info = imfinfo(fileName);   %返回图片序列的结构体
+imNum = size(info,1);   %图片张数（构架数）
+row = info(1).Height;   %第一张图片的高度（行数）
+column = info(1).Width; %第一张图片的宽度（列数）
+clear info; %删除有关图片序列文件的信息
+
+%%%%% 选择并读取一个文件夹下的多张图片 %%%%%%
+% [file,path] = uigetfile('*.tif'); %默认当前文件夹打开文件选择对话框（只包含tif文件）,主要是获取图片所在文件夹的路径
+% myfolder = dir(fullfile(path,'*.tif'));  %查找图片所在文件夹下的tif内容
+% data = readMulTif(myfolder);  %读取一个文件夹下多张图片
+
+%% 对图片序列去噪
+filtData = zeros(imNum,row,column);
+for ii = 1:imNum
+    temp = squeeze(data(ii,:,:)); 
+    temp = wiener2(temp,[5,5]); %维纳滤波(适合去除高斯噪声）
+    temp = adpmedian(temp,7);  %自适应中值滤波
+    filtData(ii,:,:) = temp;
+end
+clear data; %清除原始图片序列数据，释放内存
+
+%% FFT analysis of each pixels
+% 对三维图片序列数据沿着时间尺度方向求fft
+Nfft = 512; %指定图片的序列长度，2的幂
+Fs = 106; %Sampling frequency
+Fn = (0:Nfft-1)/Nfft*Fs; %frequency sequence
+Y = fft(filtData,[],1);  %沿着图片序列长度方向求fft
+% Mag = abs(Y);   %幅值
+
+% % 对三维图片序列的fft变换和反变换
+% Y = fft(filtData,Nfft,1); 
+% filtDatafft = ifft(Y,Nfft,1);
+
+% 每个pixel沿着时间尺度方向fft去噪
+Fs = 106;
+f1 = 0.1; f2 = 0.5; f3 = 3; %截止频率,如果f1不为0，结果有点奇怪
+YY = zeros(size(Y));
+for ii = 0:Nfft-1;
+    if (f1 < ii/Nfft*Fs && ii/Nfft*Fs < f2)  || ii/Nfft*Fs > f3;
+        YY(ii+1,:,:) = 0;
+    else
+        YY(ii+1,:,:) = Y(ii+1,:,:);
+    end
+end
+% MagMag = abs(YY);  %幅值
+filtDatafft = real(ifft(YY));
+showSlide(filtDatafft)
+
+%% 保存图像
+for ii = 1:size(filtDatafft,1)
+    temp = squeeze(filtDatafft(ii,:,:));
+    temp1 = uint16(temp);
+    imwrite(temp1,'filtDatafft.tif','WriteMode','append','Resolution',96)
+end
+
+%% Differential images (subtract the first image and then wiener2 filtering)
+%%%%% 图片序列以三维数组形式存在：filtData %%%%%
+bgRange = 1; %选取需要差减的背景图片序列范围（多张比单选取第一张的效果好）
+subData = subBg(filtDatafft,bgRange);  %差减掉背景，data第一维是图片张数
+subData(1,:,:) = subData(2,:,:);  %使差减掉的第一张图片不为0，便于后面计算处理
+
+% %%%%% 图片序列以元胞数组形式存在：image %%%%%
+% image = cell(imNum,1);  %构建图片序列的胞元数组
+% for ii = 1:imNum;
+%     image{ii} = squeeze(filtData(ii,:,:));
+% end
+%% Create image mask
+% 显示图像序列
+showSlide(subData)
+
+% 显示有颗粒的图像并创建mask
+n = 123;   % 根据showSlide观察到的有纳米颗粒的图片序号
+figure,subplot(3,1,1),imagesc(squeeze(subData(n,:,:)))
+impixelinfo
+[roiMask,c1,r1] = roipoly();  %互动式选取颗粒部分的mask
+
+% 根据impixelinfo的信息，估计背景mask的坐标
+c2 = c1+220;   %横坐标
+r2 = r1-50;  %纵坐标
+bgMask = roipoly(row,column,c2,r2);
+% bgMask = poly2mask(c2,r2,row,column);
+subplot(3,1,2),imagesc(roiMask)
+subplot(3,1,3),imagesc(bgMask)
+
